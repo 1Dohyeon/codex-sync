@@ -1,0 +1,85 @@
+# claude-sync/settings.json 의 permissions(allow/deny/ask) 중 Bash 항목을 옮긴 것이다.
+# Read/Edit/Write(~/plans/**) 와 additionalDirectories 는 셸 명령이 아니라서 여기에 두지 않는다.
+
+# ===== allow =====
+
+prefix_rule(
+    pattern = ["git", ["status", "diff", "log", "show", "branch", "merge-base", "rev-parse", "cherry", "remote", "check-ignore"]],
+    decision = "allow",
+    match = ["git status", "git merge-base HEAD develop"],
+    not_match = ["git merge develop", "git commit -m x"],
+)
+
+prefix_rule(
+    pattern = ["git", "stash", "list"],
+    decision = "allow",
+    match = ["git stash list"],
+    not_match = ["git stash pop"],
+)
+
+prefix_rule(
+    pattern = ["git", "worktree", "list"],
+    decision = "allow",
+    match = ["git worktree list"],
+    not_match = ["git worktree remove ../x"],
+)
+
+prefix_rule(
+    pattern = [["ls", "find", "rg", "grep"]],
+    decision = "allow",
+    match = ["ls -la", "rg foo src"],
+)
+
+prefix_rule(
+    pattern = ["node", "~/.claude/skills/planning-dev/hooks/cochange.js"],
+    decision = "allow",
+)
+
+prefix_rule(
+    pattern = ["python3", ["~/.claude/skills/planning-dev/hooks/tasksim.py", "~/.claude/skills/planning-dev/hooks/prsim.py"]],
+    decision = "allow",
+)
+
+prefix_rule(
+    pattern = ["pnpm", ["lint", "check-types", "test", "build"]],
+    decision = "allow",
+    match = ["pnpm test -- src/a.spec.ts"],
+    not_match = ["pnpm install"],
+)
+
+prefix_rule(
+    pattern = ["bun", "run", ["lint", "check-types"]],
+    decision = "allow",
+    match = ["bun run lint"],
+    not_match = ["bun run dev"],
+)
+
+prefix_rule(
+    pattern = ["gh", "pr", ["view", "list", "diff", "checks", "status", "create", "edit", "close", "reopen", "ready", "review", "comment", "lock", "unlock", "checkout"]],
+    decision = "allow",
+    match = ["gh pr view 7888 --json title"],
+    not_match = ["gh pr merge 1"],
+)
+
+# ===== deny =====
+
+prefix_rule(
+    pattern = [["cat", "head", "tail"]],
+    decision = "forbidden",
+    match = ["cat .env", "tail -n 20 a.log"],
+)
+
+# ===== ask =====
+
+prefix_rule(
+    pattern = ["gh", "pr", "merge"],
+    decision = "prompt",
+    match = ["gh pr merge 1 --squash"],
+)
+
+prefix_rule(
+    pattern = ["git", "merge"],
+    decision = "prompt",
+    match = ["git merge develop"],
+    not_match = ["git merge-base HEAD develop"],
+)
