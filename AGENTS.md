@@ -15,6 +15,7 @@
 | git 관련 작업(worktree, commit, push, ...) | [`/git-workflow`](skills/git-workflow/SKILL.md)   |
 | 조사·리서치·자료 종합·브레인스토밍         | [`/research`](skills/research/SKILL.md)           |
 | 논문·긴 기술 문서 정독·정리                | [`/paper-reading`](skills/paper-reading/SKILL.md) |
+| 세션 작업 일기 기록("worklog 써줘" 등)     | [`/worklog`](skills/worklog/SKILL.md)             |
 
 - 어느 트리거인지 판단이 서지 않으면 스킬을 고르기 전에 사용자에게 종류를 확인한다.
 - 트리거는 맞으나 해당 skill의 적용 범위(입력 형태·전제)가 이번 요청과 맞지 않으면, 스킬 없이 진행하되 어느 전제가 맞지 않았는지 먼저 밝힌다.
@@ -38,6 +39,10 @@
 # 계획 문서의 2순위 위치(plans 폴더 자체)다. 문서는 $PLANS_PATH/{owner}/{repo}/{branch}/ 에 둔다. 기본값은 ~/plans 다.
 # 스크립트(hooks/save-docs.sh, skills/planning-dev/hooks/tasksim.py)는 이 파일을 읽지 못해 값을 바꿔도 ~/plans 를 쓴다.
 PLANS_PATH=~/plans
+
+# worklog 스킬이 작업 일기를 두는 곳이다. 문서는 $WORKLOG_PATH/{YYYY}/{MM}/ 에 둔다. 기본값은 ~/worklog 다.
+# 스크립트(hooks/worklog.sh, hooks/save-docs.sh)는 이 파일을 읽지 못해 값을 바꿔도 ~/worklog 를 쓴다.
+WORKLOG_PATH=~/worklog
 ```
 
 # LOOKUP RULE

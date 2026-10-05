@@ -19,13 +19,14 @@ https://github.com/1Dohyeon/codex-sync 읽고 설치해줘
 - 연결 상태는 `ls -l ~/.codex`와 `ls -l ~/.agents`로 확인합니다. `->` 뒤가 저장소 경로면 연결된 것입니다.
 - **기존 설정은 지우지 않습니다.** 실제 파일은 `~/codex-backup/`으로 옮긴 뒤 링크합니다. 다른 도구가 관리하던 심링크는 덮어쓰기 전에 원래 경로를 알려주고 승인을 받습니다.
 - 절차는 `git`·`ln`·`mv`·`mkdir`·`ls`·`find` 명령을 씁니다. 기존 `~/.codex/rules/`의 `forbidden` 규칙에 걸려 있으면 중간에 멈춥니다.
+- [`planning-dev`](skills/planning-dev/SKILL.md)의 깊은 분석에서 과거 유사 태스크를 찾으려면 `kiwipiepy`·`scikit-learn`이 필요합니다. 없으면 그 검색만 건너뜁니다.
 
 ## GLOBAL CODEX `~/.codex/`
 
 ```s
 ~/.codex/                                         # 실제 폴더
 ├── agents/ hooks/ prompts/ rules/                # → codex-sync로 심링크
-├── AGENTS.md                                     # → codex-sync로 심링크
+├── AGENTS.md hooks.json                          # → codex-sync로 심링크
 └── config.toml auth.json sessions/ log/ ...      # Codex 설정·런타임, git이 모름
 
 ~/.agents/
@@ -34,11 +35,9 @@ https://github.com/1Dohyeon/codex-sync 읽고 설치해줘
 
 skills만 `~/.agents/` 아래에 연결합니다. Codex가 사용자 skills를 이 위치에서 읽기 때문입니다.
 
-`config.toml`은 이 저장소가 관리하지 않습니다. 모델, 샌드박스, MCP 서버, hooks 등록은 기기마다 직접 설정합니다.
+`config.toml`은 이 저장소가 관리하지 않습니다. 모델, 샌드박스, MCP 서버는 기기마다 직접 설정합니다. 훅은 [`hooks.json`](hooks.json)으로 등록하며, 새로 연결하거나 내용이 바뀌면 Codex의 `/hooks`에서 신뢰해야 실행됩니다.
 
-`~/plans/`는 계획 문서를 둘 수 있는 곳 가운데 하나입니다. 경로는 [`AGENTS.md`](AGENTS.md)의 ENVIRONMENTS 절에 있는 `PLANS_PATH`로 바꿀 수 있습니다. `~/.codex/`와 codex-sync 밖의 별개 위치이며, 여기에 남길지와 이를 git 저장소로 둘지는 모두 선택입니다.
-
-> `~/plans/`를 git 저장소로 관리하면 어느 기기에서든 똑같은 기록을 이어서 쓸 수 있습니다.
+`~/plans/`는 계획 문서를 둘 수 있는 곳 가운데 하나입니다. 경로는 [`AGENTS.md`](AGENTS.md)의 ENVIRONMENTS 절에 있는 `PLANS_PATH`로 바꿀 수 있으며, `~/.codex/`와 codex-sync 밖의 별개 위치입니다.
 
 ## codex
 
@@ -49,7 +48,8 @@ codex-sync/                # 설정 저장소
 ├── skills/                # 상황별 절차 (필요할 때만 로드)
 ├── agents/                # 커스텀 서브에이전트 정의 (*.toml)
 ├── prompts/               # 커스텀 프롬프트 (슬래시 커맨드)
-├── hooks/                 # 훅 스크립트 (hooks.json 등록은 하지 않음)
+├── hooks/                 # 훅 스크립트
+├── hooks.json             # 훅 등록 (SessionEnd에 save-docs·worklog)
 ├── templates/             # 문서 작성 시 참고할 템플릿 (심링크 대상 아님)
 ├── output-styles/         # claude-sync의 출력 스타일 원본 (심링크 대상 아님)
 ├── SETTING_GUIDE.md       # Codex가 읽고 실행하는 세팅 절차 (심링크 대상 아님)
@@ -62,7 +62,8 @@ codex-sync/                # 설정 저장소
 | ----------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------- |
 | `CLAUDE.md` `CLAUDE.local.md` `rules/*.md` | `AGENTS.md`              | Codex는 지침 폴더를 자동으로 읽지 않아서 원문을 순서대로 이어 붙였습니다.          |
 | `agents/*.md`                             | `agents/*.toml`          | `name`·`description`·`developer_instructions` 필드로 옮겼습니다. `tools`·`model`은 대응 필드가 없어 뺐습니다. |
-| `commands/`                               | `prompts/`               | 내용은 같습니다. Codex에서 prompts는 skills로 대체되는 중인 기능입니다.           |
+| `commands/`                               | `prompts/`               | 내용은 같고 실행 경로만 `~/.codex/`로 바꿨습니다. Codex에서 prompts는 skills로 대체되는 중인 기능입니다. |
+| `settings.json`의 `hooks`                 | `hooks.json`             | `save-docs.sh`·`worklog.sh`를 Codex 형식에 맞춰 고쳤습니다. 아래 "알려진 한계"를 참고합니다. |
 | `settings.json`의 `permissions` (Bash)    | `rules/default.rules`    | `allow`는 `"allow"`, `deny`는 `"forbidden"`, `ask`는 `"prompt"`로 옮겼습니다.      |
 | `settings.json`의 나머지, `settings.local.json` | 없음               | `config.toml`에 해당하며 이 저장소가 관리하지 않습니다.                            |
 
@@ -86,6 +87,7 @@ Codex는 세션을 시작할 때 [`AGENTS.md`](AGENTS.md)를 컨텍스트에 주
 | git 작업(worktree·commit·push 등) | [`git-workflow`](skills/git-workflow/SKILL.md)    |
 | 조사·리서치·자료 종합             | [`research`](skills/research/SKILL.md)            |
 | 논문·긴 기술 문서 정독            | [`paper-reading`](skills/paper-reading/SKILL.md)  |
+| 세션 작업 일기                    | [`worklog`](skills/worklog/SKILL.md)              |
 
 ## 알려진 한계
 
@@ -94,5 +96,9 @@ Codex는 세션을 시작할 때 [`AGENTS.md`](AGENTS.md)를 컨텍스트에 주
 - `/development` 같은 Claude Code의 스킬 호출 방식과 `Read`·`Grep`·`Agent` 같은 Claude Code 도구 이름이 본문에 있습니다.
 - 스킬과 규칙이 가리키는 경로 가운데 `~/.claude/`로 시작하는 것이 있습니다. `rules/default.rules`의 `planning-dev` 훅 스크립트 규칙도 `~/.claude/skills/...` 경로를 씁니다.
 - 리뷰 스킬(`diff-review`·`branch-review`·`pr-review`)은 축마다 서브에이전트를 병렬로 띄우고 모델을 따로 지정하는 구조입니다. codex-sync의 `agents/*.toml`에는 모델 지정이 없으므로, 축별 모델 배분은 적용되지 않습니다.
+- Codex의 `SessionEnd` 훅은 최대 3초 뒤 종료됩니다. 그래서 두 훅은 실제 작업을 백그라운드로 넘기고 바로 끝나는데, Codex가 종료할 때 이 백그라운드 프로세스까지 정리하는지는 확인하지 않았습니다.
+- `hooks/worklog.sh`는 Codex 세션 기록의 `user_message` 줄로 메시지를 세고 `codex exec`로 `$worklog` 스킬을 부릅니다. 이 형식과 `codex exec` 옵션은 문서와 검색으로만 맞췄고, 실제 Codex에서 돌려 보지 않았습니다. [`worklog`](skills/worklog/SKILL.md) 스킬 본문의 transcript 읽는 법도 Claude Code 형식 기준입니다.
+- Windows에서 Codex가 훅 명령을 어느 셸로 실행하는지 확인하지 않았습니다. `hooks.json`은 `sh`가 PATH에 있다고 보고 `commandWindows` 없이 같은 명령을 씁니다.
+- `hooks/notion-readonly.sh`는 `hooks.json`에 등록하지 않았습니다. Codex에서 MCP 도구 이름과 차단 응답 형식이 Claude Code와 같은지 확인하지 않았기 때문입니다.
 
-세션 흐름과 리뷰 축 설계는 [claude-sync README](https://github.com/1Dohyeon/claude-sync#세션-흐름)를 참고합니다.
+세션 흐름은 [claude-sync README](https://github.com/1Dohyeon/claude-sync#세션-흐름)를, 리뷰 축 설계는 [`skills/review-common/README.md`](skills/review-common/README.md)를 참고합니다.

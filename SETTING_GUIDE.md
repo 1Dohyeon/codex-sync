@@ -12,6 +12,7 @@ Codex가 읽고 그대로 실행하는 세팅 절차. 사용자가 저장소 주
 | --------------------------------------------- | ---------------------- |
 | `~/.codex/agents/` `~/.codex/hooks/` `~/.codex/prompts/` `~/.codex/rules/` | 저장소의 동명 디렉터리 |
 | `~/.codex/AGENTS.md`                          | 저장소의 `AGENTS.md`   |
+| `~/.codex/hooks.json`                         | 저장소의 `hooks.json`  |
 | `~/.agents/skills/`                           | 저장소의 `skills/`     |
 
 skills만 `~/.codex/`가 아니라 `~/.agents/` 아래에 연결한다. Codex가 사용자 skills를 `~/.agents/skills`에서 읽기 때문이다.
@@ -163,6 +164,7 @@ MSYS=winsymlinks:nativestrict ln -sfn "$SYNC/hooks" "$HOME/.codex/hooks"
 MSYS=winsymlinks:nativestrict ln -sfn "$SYNC/prompts" "$HOME/.codex/prompts"
 MSYS=winsymlinks:nativestrict ln -sfn "$SYNC/rules" "$HOME/.codex/rules"
 MSYS=winsymlinks:nativestrict ln -sfn "$SYNC/AGENTS.md" "$HOME/.codex/AGENTS.md"
+MSYS=winsymlinks:nativestrict ln -sfn "$SYNC/hooks.json" "$HOME/.codex/hooks.json"
 MSYS=winsymlinks:nativestrict ln -sfn "$SYNC/skills" "$HOME/.agents/skills"
 ```
 
@@ -175,6 +177,7 @@ ln -sfn "$SYNC/hooks" "$HOME/.codex/hooks"
 ln -sfn "$SYNC/prompts" "$HOME/.codex/prompts"
 ln -sfn "$SYNC/rules" "$HOME/.codex/rules"
 ln -sfn "$SYNC/AGENTS.md" "$HOME/.codex/AGENTS.md"
+ln -sfn "$SYNC/hooks.json" "$HOME/.codex/hooks.json"
 ln -sfn "$SYNC/skills" "$HOME/.agents/skills"
 ```
 
@@ -188,7 +191,7 @@ ls -l "$HOME/.codex"
 ls -l "$HOME/.agents"
 ```
 
-「연결 대상」의 6개 항목이 모두 `->` 화살표로 보여야 한다. 2단계에서 건너뛰기로 한 항목이 있으면 그 개수만큼 빠진다. `config.toml` `sessions/` `log/` 같은 런타임 항목이 함께 찍히는 것은 정상이며, 세는 대상이 아니다. Windows에서 화살표 없이 일반 파일/디렉터리면 3단계 권한 확인부터 재실행.
+「연결 대상」의 7개 항목이 모두 `->` 화살표로 보여야 한다. 2단계에서 건너뛰기로 한 항목이 있으면 그 개수만큼 빠진다. `config.toml` `sessions/` `log/` 같은 런타임 항목이 함께 찍히는 것은 정상이며, 세는 대상이 아니다. Windows에서 화살표 없이 일반 파일/디렉터리면 3단계 권한 확인부터 재실행.
 
 ```sh
 find "$HOME/.codex" "$HOME/.agents" -maxdepth 1 -type l -exec test ! -e {} \; -print
@@ -203,7 +206,8 @@ find "$HOME/.codex" "$HOME/.agents" -maxdepth 1 -type l -exec test ! -e {} \; -p
 - 심링크를 덮어쓴 항목이 있으면: 이름과 원래 가리키던 경로. 되돌리려면 `ln -sfn "<원래 타깃>" "<링크 위치>"`
 - 건너뛴 항목이 있으면: 이름과 건너뛴 이유
 - 남은 수동 조치 중 해당 항목
-- 새 세션부터 `AGENTS.md`·rules·skills 적용됨(Codex 재시작 필요) 안내
+- 새 세션부터 `AGENTS.md`·rules·skills·hooks 적용됨(Codex 재시작 필요) 안내
+- 훅은 Codex에서 `/hooks`로 검토하고 신뢰해야 실행된다는 안내
 
 ---
 
@@ -212,4 +216,5 @@ find "$HOME/.codex" "$HOME/.agents" -maxdepth 1 -type l -exec test ! -e {} \; -p
 - 3단계 시점 승인 프롬프트는 정상 (`rules/` 연결 전이라 허용 규칙 없음)
 - `rules/default.rules`의 `forbidden`으로 명령이 막히면 우회하지 말고 중단, 안내: `mv ~/.codex/rules ~/.codex/rules.before-sync`
 - Codex가 "다시 묻지 않음" 승인을 `~/.codex/rules/default.rules`에 덧붙이면, 링크를 타고 저장소 파일이 바뀐다. 커밋할지는 사용자가 정한다
-- `config.toml`(모델, 샌드박스, MCP, hooks 등록)은 이 저장소가 관리하지 않는다. 기기마다 직접 설정한다
+- `config.toml`(모델, 샌드박스, MCP)은 이 저장소가 관리하지 않는다. 기기마다 직접 설정한다
+- `hooks.json`의 훅은 처음 연결했을 때와 내용이 바뀔 때마다 Codex의 `/hooks`에서 신뢰해야 실행된다. 신뢰는 사용자가 직접 한다

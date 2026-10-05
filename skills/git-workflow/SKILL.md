@@ -194,6 +194,16 @@ rm -rf <dir>
 git -C <main-dir> worktree prune
 ```
 
+오류에 `Filename too long`이 있으면 경로가 긴 파일(`node_modules` 등) 때문에 폴더를 다 지우지 못한 것이다. git은 이때 이미 `.git` 파일과 등록 정보를 지웠을 수 있다. **다른 우회(`core.longpaths`, `\\?\` 경로, robocopy, 다른 삭제 명령 등)를 시도하지 않는다.** 아래 두 명령으로 연결만 끊고 다음 단계로 간다. 남은 폴더와 빈 부모 폴더는 지우지 않고, 남은 폴더 경로를 보고에 적는다.
+
+```sh
+rm -f <dir>/.git
+```
+
+```sh
+git -C <main-dir> worktree prune
+```
+
 ### 3. 로컬 브랜치 삭제
 
 ```sh
