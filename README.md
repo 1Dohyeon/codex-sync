@@ -49,7 +49,7 @@ codex-sync/                # 설정 저장소
 ├── agents/                # 커스텀 서브에이전트 정의 (*.toml)
 ├── prompts/               # 커스텀 프롬프트 (슬래시 커맨드)
 ├── hooks/                 # 훅 스크립트
-├── hooks.json             # 훅 등록 (SessionEnd에 save-docs·worklog)
+├── hooks.json             # 훅 등록 (SessionStart·SessionEnd에 save-docs)
 ├── templates/             # 문서 작성 시 참고할 템플릿 (심링크 대상 아님)
 ├── output-styles/         # claude-sync의 출력 스타일 원본 (심링크 대상 아님)
 ├── SETTING_GUIDE.md       # Codex가 읽고 실행하는 세팅 절차 (심링크 대상 아님)
@@ -63,7 +63,7 @@ codex-sync/                # 설정 저장소
 | `CLAUDE.md` `CLAUDE.local.md` `rules/*.md` | `AGENTS.md`              | Codex는 지침 폴더를 자동으로 읽지 않아서 원문을 순서대로 이어 붙였습니다.          |
 | `agents/*.md`                             | `agents/*.toml`          | `name`·`description`·`developer_instructions` 필드로 옮겼습니다. `tools`·`model`은 대응 필드가 없어 뺐습니다. |
 | `commands/`                               | `prompts/`               | 내용은 같고 실행 경로만 `~/.codex/`로 바꿨습니다. Codex에서 prompts는 skills로 대체되는 중인 기능입니다. |
-| `settings.json`의 `hooks`                 | `hooks.json`             | `save-docs.sh`·`worklog.sh`를 Codex 형식에 맞춰 고쳤습니다. 아래 "알려진 한계"를 참고합니다. |
+| `settings.json`의 `hooks`                 | `hooks.json`             | `save-docs.sh`를 세션 종료뿐 아니라 시작 때도 부릅니다. worklog 훅은 없고, 일기는 세션 안에서 `$worklog`로 직접 부릅니다. |
 | `settings.json`의 `permissions` (Bash)    | `rules/default.rules`    | `allow`는 `"allow"`, `deny`는 `"forbidden"`, `ask`는 `"prompt"`로 옮겼습니다.      |
 | `settings.json`의 나머지, `settings.local.json` | 없음               | `config.toml`에 해당하며 이 저장소가 관리하지 않습니다.                            |
 
@@ -96,8 +96,7 @@ Codex는 세션을 시작할 때 [`AGENTS.md`](AGENTS.md)를 컨텍스트에 주
 - `/development` 같은 Claude Code의 스킬 호출 방식과 `Read`·`Grep`·`Agent` 같은 Claude Code 도구 이름이 본문에 있습니다.
 - 스킬과 규칙이 가리키는 경로 가운데 `~/.claude/`로 시작하는 것이 있습니다. `rules/default.rules`의 `planning-dev` 훅 스크립트 규칙도 `~/.claude/skills/...` 경로를 씁니다.
 - 리뷰 스킬(`diff-review`·`branch-review`·`pr-review`)은 축마다 서브에이전트를 병렬로 띄우고 모델을 따로 지정하는 구조입니다. codex-sync의 `agents/*.toml`에는 모델 지정이 없으므로, 축별 모델 배분은 적용되지 않습니다.
-- Codex의 `SessionEnd` 훅은 최대 3초 뒤 종료됩니다. 그래서 두 훅은 실제 작업을 백그라운드로 넘기고 바로 끝나는데, Codex가 종료할 때 이 백그라운드 프로세스까지 정리하는지는 확인하지 않았습니다.
-- `hooks/worklog.sh`는 Codex 세션 기록의 `user_message` 줄로 메시지를 세고 `codex exec`로 `$worklog` 스킬을 부릅니다. 이 형식과 `codex exec` 옵션은 문서와 검색으로만 맞췄고, 실제 Codex에서 돌려 보지 않았습니다. [`worklog`](skills/worklog/SKILL.md) 스킬 본문의 transcript 읽는 법도 Claude Code 형식 기준입니다.
+- Codex의 `SessionEnd` 훅은 최대 3초 뒤 종료됩니다. 그래서 save-docs 훅은 저장을 백그라운드로 넘기고 바로 끝나는데, Codex가 종료할 때 이 백그라운드 프로세스까지 정리하는지는 확인하지 않았습니다. 정리되더라도 다음 세션의 `SessionStart` 훅이 남은 변경을 이어서 커밋·푸시합니다.
 - Windows에서 Codex가 훅 명령을 어느 셸로 실행하는지 확인하지 않았습니다. `hooks.json`은 `sh`가 PATH에 있다고 보고 `commandWindows` 없이 같은 명령을 씁니다.
 - `hooks/notion-readonly.sh`는 `hooks.json`에 등록하지 않았습니다. Codex에서 MCP 도구 이름과 차단 응답 형식이 Claude Code와 같은지 확인하지 않았기 때문입니다.
 

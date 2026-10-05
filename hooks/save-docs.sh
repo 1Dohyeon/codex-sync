@@ -1,15 +1,16 @@
 #!/bin/sh
 # plans/(계획 문서)와 worklog/(작업 일기)가 git 저장소면 각각의 "현재 상태"를 스냅샷 커밋/푸시한다.
-#   - SessionEnd 훅(hooks.json)이 hook 인자로 실행
+#   - SessionStart·SessionEnd 훅(hooks.json)이 hook 인자로 실행. 시작 때는 지난 세션이 남긴 변경을 이어서 저장한다.
 #   - /save-docs 프롬프트로 수동 실행
-#   - 인자로 plans 또는 worklog를 주면 그 저장소만 저장한다(worklog.sh가 일기를 쓴 뒤 worklog만 저장할 때).
+#   - 인자로 plans 또는 worklog를 주면 그 저장소만 저장한다.
 # 목적: 문서 유실 방지 + 크로스머신 이어작업.
 # 원칙(반드시 지킴): 변경 없으면 통과 / 오프라인·충돌·에러여도 세션을 절대 막지 않음.
 
 # 훅 계약상 stdin으로 JSON이 올 수 있으나 여기선 쓰지 않는다(있으면 소진만).
 { command -p cat 2>/dev/null || cat; } >/dev/null 2>&1 || :
 
-# Codex의 SessionEnd 훅은 최대 3초 뒤 종료되므로, 훅에서 부르면 저장을 백그라운드로 넘기고 바로 끝낸다.
+# 훅에서 부르면 저장을 백그라운드로 넘기고 출력 없이 바로 끝낸다.
+# SessionEnd 훅은 최대 3초 뒤 종료되고, SessionStart 훅의 stdout은 세션 컨텍스트에 주입되기 때문이다.
 if [ "$1" = hook ]; then
     nohup sh "$0" < /dev/null >/dev/null 2>&1 &
     exit 0
